@@ -674,7 +674,7 @@ turntable.addEventListener("message", function(m){
 	if (command == "speak"){
 		var user_id = m["userid"];
 		var text = m["text"].toLowerCase();
-		var options = [user_id, text];
+		var options = {'user_id':user_id, 'text':text};
 		var funct = available_commands[text][0];
 		if(funct) { 
 			funct(options); 
