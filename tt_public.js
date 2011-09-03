@@ -703,9 +703,6 @@ turntable.addEventListener("message", function(m){
 		else if (text == "-plays"){
 			show_plays(user_id);
 		}
-		else if (text.indexOf("-rickroll ") == 0){
-			rickroll(user_id, text);
-		}
 	}
 	else if (command == "add_dj"){
 		var user_id = m["user"][0]["userid"];
