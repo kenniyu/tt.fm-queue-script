@@ -182,28 +182,7 @@ function deliver_chat(input_message){
 
 function get_help(text){
 	var command = text.substring(6, text.length);
-	var input_message = "";
-	if (command == "w?"){
-		input_message += "w? : Shows waitlist";
-	}
-	else if (command == "w+"){
-		input_message += "w+ : Adds yourself to waitlist";
-	}
-	else if (command == "w-"){
-		input_message += "w- : Removes yourself from waitlist";
-	}
-	else if (command == "-mods"){
-		input_message += "-mods : Lists available mods";
-	}
-	else if (command == "-promote"){
-		input_message += "-promote : Promotes yourself to front of waitlist (requires votes)";
-	}
-	else if (command == "-plays"){
-		input_message += "-plays : Shows DJ play count on deck";
-	}
-	else if (command == "-votekick"){
-		input_message += "-votekick [username]: Kicks user [username] (requires votes)";
-	}
+	var input_message = (available_commands[command]) ? available_commands[command][1] : "";
 	deliver_chat(input_message);
 }
 
@@ -258,7 +237,8 @@ function check_ban(user_id){
 	}
 }
 
-function promote(username){
+function promote(options){
+	var username = options['user_id'];
 	var user_id = get_user_id(username, true);
 	if (user_id != -1){
 		var index = my_queue.indexOf(user_id);
@@ -306,7 +286,8 @@ function get_user_name(user_id, strict){
 	}
 }
 
-function show_queue(user_id){
+function show_queue(options){
+    var user_id = options['user_id'];
 	var queue_length = my_queue.length;
 	var input_message = "";
 	var username = get_user_name(user_id, true);
@@ -333,7 +314,8 @@ function show_queue(user_id){
 	deliver_chat(input_message);
 }
 
-function add_to_queue(user_id){
+function add_to_queue(options){
+	var user_id = options['user_id'];
 	var username = get_user_name(user_id, true);
 	if (dj_hash.length < 5 && is_dj(username) == -1 && my_queue.length == 0){
 		var input_message = "There's an open spot "+username+". Step up!";
@@ -490,7 +472,8 @@ function catch_rem_dj(user_id){
 	}
 }
 
-function vote_promote(user_id){
+function vote_promote(options){
+	var user_id = options['user_id'];
 	// can only be promoted if not a dj and there isn't any room on deck and if there are more than 1 people on waitlist.
 	if (is_dj(get_user_name(user_id, true)) == -1 && (dj_hash.length + my_queue.length > 5)){
 		if (room_vote_manager["type"] == undefined){
@@ -513,7 +496,9 @@ function vote_promote(user_id){
 	}
 }
 
-function vote_kick(text, user_id){
+function vote_kick(options){
+	var user_id = options['user_id'];
+	var text = options['text'];
 	// parse text
 	target_username = text.substring(10, text.length);
 	target_user_id = 0;
@@ -541,7 +526,8 @@ function vote_kick(text, user_id){
 }
 
 
-function vote_stop(user_id){
+function vote_stop(options){
+	var user_id = options['user_id'];
 	if (is_mod(user_id) && room_vote_manager != {}){
 		// user stopping vote is mod and there is a vote going on
 		if (room_vote_manager["type"] == "promote"){
@@ -555,7 +541,9 @@ function vote_stop(user_id){
 	}
 }
 
-function process_vote(user_id, choice){
+function process_vote(options){
+	var user_id = options['user_id'];
+	var choice = options['text'];
 	if (room_vote_manager != {}){
 		// process vote if there is one going on
 		if (room_vote_manager["voters"].indexOf(user_id) == -1){
@@ -638,7 +626,8 @@ function show_existing_vote(attempted_vote_type){
 	deliver_chat(input_message);
 }
 
-function show_plays(user_id){
+function show_plays(options){
+	var user_id = options['user_id'];
 	if (dj_hash.length > 0){
 		var input_message = "";
 		for (var a=0; a<5; a++){
@@ -659,6 +648,21 @@ function show_plays(user_id){
 	deliver_chat(input_message);
 }
 
+
+var available_commands = {
+  'w?': [show_queue, "w? : Shows waitlist"],
+  'w+': [add_to_queue, "w+ : Adds yourself to waitlist"],
+  'w-': [remove_from_queue, "w- : Removes yourself from waitlist"],
+  '-mods': [show_mods, "-mods : Lists available mods"],
+  '-promote': [vote_promote, "-promote : Promotes yourself to front of waitlist (requires votes)"],
+  '-plays': [show_plays, "-plays : Shows DJ play count on deck"],
+  '-votekick': [vote_kick, "-votekick [username]: Kicks user [username] (requires votes)"],
+  '-help': [queue_instructions, ''],
+  '-help ':[get_help, ''],
+  '-stopvote': [vote_stop, ''],
+  '-yes': [process_vote, '']  
+};
+
 turntable.addEventListener("trackstart", function(c){
 	// set up sound manager
 	my_sound_manager = c["sound"];
@@ -670,38 +674,10 @@ turntable.addEventListener("message", function(m){
 	if (command == "speak"){
 		var user_id = m["userid"];
 		var text = m["text"].toLowerCase();
-		if (text == "w?"){
-			show_queue(user_id);
-		}
-		else if (text == "w+"){
-			add_to_queue(user_id);
-		}
-		else if (text == "w-"){
-			remove_from_queue(user_id, "manual");
-		}
-		else if (text == "-help"){
-			queue_instructions(user_id);
-		}
-		else if (text.indexOf("-help ") == 0){
-			get_help(text);
-		}
-		else if (text == "-mods"){
-			show_mods();
-		}
-		else if (text == "-promote"){
-			vote_promote(user_id);
-		}
-		else if (text == "-stopvote"){
-			vote_stop(user_id);
-		}
-		else if (text.indexOf("-votekick ") == 0){
-			vote_kick(text, user_id);
-		}
-		else if (text == "-yes"){
-			process_vote(user_id, "yes");
-		}
-		else if (text == "-plays"){
-			show_plays(user_id);
+		var options = [user_id, text];
+		var funct = available_commands[text][0];
+		if(funct) { 
+			funct(options); 
 		}
 	}
 	else if (command == "add_dj"){
