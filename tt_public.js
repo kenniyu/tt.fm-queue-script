@@ -1,5 +1,6 @@
 var kick_threshold = 3;			// # of users required for vote kick to pass
 var promote_threshold = 3;		// # of users required for vote promote to pass
+var remove_threshold = 3;		// # of users required for vote remove to pass
 
 function get_first_tt_obj(){
 	for (var object in turntable){
@@ -180,7 +181,8 @@ function deliver_chat(input_message){
 	last_message_time = new Date();
 }
 
-function get_help(text){
+function get_help(options){
+	var text = options["text"];
 	var command = text.substring(6, text.length);
 	var input_message = (available_commands[command]) ? available_commands[command][1] : "";
 	deliver_chat(input_message);
@@ -382,17 +384,22 @@ function remove_from_afk(user_id){
 	}
 }
 
-function remove_dj(user_id){
-	if (dj_steal_hash[user_id] == undefined){
-		dj_steal_hash[user_id] = 1;
-	}
-	else{
-		dj_steal_hash[user_id] += 1;
-	}
-	if (dj_steal_hash[user_id] == 3){
-		// boot
-		dj_steal_hash[user_id] = 0;
-		boot(user_id);
+function remove_dj(user_id, steal){
+	if (steal){
+		if (dj_steal_hash[user_id] == undefined){
+			dj_steal_hash[user_id] = 1;
+		}
+		else{
+			dj_steal_hash[user_id] += 1;
+		}
+		if (dj_steal_hash[user_id] == 3){
+			// boot
+			dj_steal_hash[user_id] = 0;
+			boot(user_id);
+		}
+		else{
+			my_room_manager.callback('remove_dj', user_id);
+		}
 	}
 	else{
 		my_room_manager.callback('remove_dj', user_id);
@@ -450,7 +457,7 @@ function catch_add_dj(user_id){
 		}
 		else{
 			var input_message = username + ", it's not your turn to DJ yet! Check your spot in line by typing w? :]";
-			remove_dj(user_id);
+			remove_dj(user_id, true);
 		}
 	}
 	deliver_chat(input_message);
@@ -496,32 +503,56 @@ function vote_promote(options){
 	}
 }
 
-function vote_kick(options){
-	var user_id = options['user_id'];
-	var text = options['text'];
-	// parse text
-	target_username = text.substring(10, text.length);
-	target_user_id = 0;
-	for (var user_id in user_hash){
-		if (target_username.toLowerCase() == user_hash[user_id]["name"].toLowerCase()){
-			target_user_id = user_id;
-		}
-	}	
-	if (target_user_id != 0){
-		// found user to kick
-		if (room_vote_manager["type"] != undefined){
-			// show current vote process
-			show_existing_vote("kick");
-		}
-		else{
-			room_vote_manager["type"] = "kick";
-			room_vote_manager["target"] = target_user_id;
-			room_vote_manager["yes"] = 0;
-			room_vote_manager["threshold"] = kick_threshold;
-			room_vote_manager["voters"] = [];
-			var input_message = room_vote_manager["threshold"] + " more votes needed to kick " + get_user_name(room_vote_manager["target"], true) + " from the room.  Type -yes to vote kick :]";
+function vote_remove(options){
+	if (room_vote_manager["type"] == undefined){
+		var user_id = options['user_id'];
+		// can only remove someone who is a dj
+		var text = options['text'];
+		var target_dj_spot = parseInt(text.substring(8, text.length)) || 0;
+		if (target_dj_spot > 0 && target_dj_spot <= 5){
+			var target_user_id = dj_hash[target_dj_spot-1];
+			var target_user_name = get_user_name(target_user_id, true);
+			room_vote_manager = {"type": "remove", "target": target_user_id, "yes": 0, "threshold": remove_threshold, "voters": []};
+			var input_message = room_vote_manager["threshold"] + " more votes needed to remove " + get_user_name(room_vote_manager["target"], true) + " from the decks.  Type -yes to vote :]";
 			deliver_chat(input_message);
 		}
+	}
+	else{
+		show_existing_vote("remove");
+	}
+}
+
+function vote_kick(options){
+	if (room_vote_manager["type"] == undefined){
+		var user_id = options['user_id'];
+		var text = options['text'];
+		// parse text
+		var target_username = text.substring(10, text.length);
+		var target_user_id = 0;
+		for (var user_id in user_hash){
+			if (target_username.toLowerCase() == user_hash[user_id]["name"].toLowerCase()){
+				target_user_id = user_id;
+			}
+		}	
+		if (target_user_id != 0){
+			// found user to kick
+			if (room_vote_manager["type"] != undefined){
+				// show current vote process
+				show_existing_vote("kick");
+			}
+			else{
+				room_vote_manager["type"] = "kick";
+				room_vote_manager["target"] = target_user_id;
+				room_vote_manager["yes"] = 0;
+				room_vote_manager["threshold"] = kick_threshold;
+				room_vote_manager["voters"] = [];
+				var input_message = room_vote_manager["threshold"] + " more votes needed to kick " + get_user_name(room_vote_manager["target"], true) + " from the room.  Type -yes to vote kick :]";
+				deliver_chat(input_message);
+			}
+		}
+	}
+	else{
+		show_existing_vote("kick");
 	}
 }
 
@@ -567,6 +598,11 @@ function process_vote(options){
 					boot(room_vote_manager["target"]);
 					var input_message = "Votekick passed for " + username + "!";
 				}
+				else if (room_vote_manager["type"] == "remove"){
+					username = get_user_name(room_vote_manager["target"], true);
+					remove_dj(room_vote_manager["target"], false);
+					var input_message = "Removing " + username + " :[";
+				}
 				room_vote_manager = {};
 			}
 			else{
@@ -576,6 +612,9 @@ function process_vote(options){
 				}
 				else if (room_vote_manager["type"] == "kick"){
 					var input_message = votes_left + " more "+ (votes_left == 1 ? "vote" : "votes") + " needed to kick " + get_user_name(room_vote_manager["target"], true) + " from the room.  Type -yes to vote :]";
+				}
+				else if (room_vote_manager["type"] == "remove"){
+					var input_message = votes_left + " more "+ (votes_left == 1 ? "vote" : "votes") + " needed to remove " + get_user_name(room_vote_manager["target"], true) + " from the decks.  Type -yes to vote :]";
 				}
 			}
 			deliver_chat(input_message);
@@ -623,6 +662,9 @@ function show_existing_vote(attempted_vote_type){
 	else if (room_vote_manager["type"] == "kick"){
 		var input_message = "There is already " + (attemped_vote_type == "kick" ? "another" : "a") + " kick in process for "+ get_user_name(room_vote_manager["target"], true) + ".";
 	}
+	else if (room_vote_manager["type"] == "remove"){
+		var input_message = "There is already " + (attemped_vote_type == "remove" ? "another" : "a") + " removal in process for "+ get_user_name(room_vote_manager["target"], true) + ".";
+	}
 	deliver_chat(input_message);
 }
 
@@ -657,6 +699,7 @@ var available_commands = {
   '-promote': [vote_promote, "-promote : Promotes yourself to front of waitlist (requires votes)"],
   '-plays': [show_plays, "-plays : Shows DJ play count on deck"],
   '-votekick': [vote_kick, "-votekick [username]: Kicks user [username] (requires votes)"],
+  '-remove': [vote_remove, "-remove [#]: Removes DJ in spot [#] (requives votes)"],
   '-help': [queue_instructions, ''],
   '-help ':[get_help, ''],
   '-stopvote': [vote_stop, ''],
@@ -675,9 +718,13 @@ turntable.addEventListener("message", function(m){
 		var user_id = m["userid"];
 		var text = m["text"].toLowerCase();
 		var options = {'user_id':user_id, 'text':text};
-		var funct = available_commands[text][0];
-		if(funct) { 
-			funct(options); 
+		if (available_commands[text]){
+			var funct = available_commands[text][0];
+			funct(options);
+		}
+		else if (available_commands[text.split(" ")[0]+" "]){
+			var funct = available_commands[text.split(" ")[0]+" "][0];
+			funct(options);
 		}
 	}
 	else if (command == "add_dj"){
