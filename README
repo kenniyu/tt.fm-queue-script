@@ -1,0 +1,14 @@
+This script is made for moderators of turntable.fm rooms!
+
+Features:  
+ - Allows for a queue system (waitlist) for users to get a chance to step up to the decks
+ - Shows # of plays for any DJ on deck since the most recent time they stepped up
+ - Allows room votes to promote someone to the front of the waitlist, as well as to kick users
+
+To run the script:
+1. Be a moderator of the room you're in
+2. Copy the code
+3. In Google Chrome, right click anywhere on the page, and click on "Inspect Element."  Click on the "Console" tab.
+4. Paste the code in the console, and press Enter.
+
+To see more commands in room, type "-help" (without quotes) in room chat.
