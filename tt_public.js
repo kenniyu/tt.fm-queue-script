@@ -680,7 +680,6 @@ function temp_user_hash_leave_timer(){
 }
 
 function show_existing_vote(attempted_vote_type){
-	alert('hi');
 	if (room_vote_manager["type"] == "promote"){
 		var input_message = "There's already " + (attempted_vote_type == "promote" ? "another" : "a") + " promotion in process for "+ get_user_name(room_vote_manager["target"], true) + ".";
 	}
