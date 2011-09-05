@@ -167,7 +167,7 @@ function is_mod(user_id){
 }
 
 function queue_instructions(){
-	var input_message = "÷÷÷÷÷÷÷÷÷÷÷Commands÷÷÷÷÷÷÷÷÷÷÷ [][] w? [] w+ [] w- [] -plays [] -promote [][] [][] -mods [] -votekick [username] [][][][][] Type -help [command] for more info on a command (ie. -help w?)";
+	var input_message = "÷÷÷÷÷÷÷÷÷÷÷Commands÷÷÷÷÷÷÷÷÷÷÷ [] w? [] w+ [] w- [] w++ [] -mods [] -plays [] -promote [] -remove [#] [][][][][][][][][][][][] [] -votekick [username] [][][][][][][][][][][][][][] Type -help [command] for more info on a command (ie. -help w?)";
 	deliver_chat(input_message);
 }
 function deliver_chat(input_message){
@@ -184,7 +184,15 @@ function deliver_chat(input_message){
 function get_help(options){
 	var text = options["text"];
 	var command = text.substring(6, text.length);
-	var input_message = (available_commands[command]) ? available_commands[command][1] : "";
+	if (available_commands[command]){
+		var input_message = available_commands[command][1];
+	}
+	else if (available_commands[command+" "]){
+		var input_message = available_commands[command+" "][1];
+	}
+	else{
+		var input_message = "";
+	}
 	deliver_chat(input_message);
 }
 
@@ -240,9 +248,8 @@ function check_ban(user_id){
 }
 
 function promote(options){
-	var username = options['user_id'];
-	var user_id = get_user_id(username, true);
-	if (user_id != -1){
+ 	var user_id = options['user_id'];
+	if (user_id in user_hash){
 		var index = my_queue.indexOf(user_id);
 		if (index > -1){
 			// user was already in queue, so remove
@@ -342,8 +349,10 @@ function add_to_queue(options){
 	deliver_chat(input_message);
 }
 
-function remove_from_queue(user_id, type){
-	if (type == "manual"){
+function remove_from_queue(options){
+	var user_id = options["user_id"];
+	var type = options["type"];
+	if (type == undefined || type == "manual"){
 		var username = get_user_name(user_id, true);
 		var index = my_queue.indexOf(user_id);
 		if (index != -1){
@@ -376,6 +385,18 @@ function remove_from_queue(user_id, type){
 		deliver_chat(input_message);
 	}
 }
+
+function shift_in_queue(options){
+	var user_id = options["user_id"];
+	var username = get_user_name(user_id, true);
+	var index = my_queue.indexOf(user_id);
+	if (index > -1 && index < my_queue.length-1){
+		my_queue.splice(index, 1);
+		my_queue.splice(index + 1, 0, user_id);
+		show_queue(options);
+	}
+}
+
 
 function remove_from_afk(user_id){
 	var index = afk_djs.indexOf(user_id);
@@ -567,6 +588,9 @@ function vote_stop(options){
 		else if (room_vote_manager["type"] == "kick"){
 			var input_message = "Votekick cancelled for " + get_user_name(room_vote_manager["target"], false);
 		}
+		else if (room_vote_manager["type"] == "remove"){
+			var input_message = "Removal cancelled for " + get_user_name(room_vote_manager["target"], false);
+		}
 		room_vote_manager = {};
 		deliver_chat(input_message);
 	}
@@ -582,7 +606,7 @@ function process_vote(options){
 			room_vote_manager["voters"].push(user_id);
 			if (room_vote_manager["yes"] >= room_vote_manager["threshold"]){
 				if (room_vote_manager["type"] == "promote"){
-					promote(get_user_name(room_vote_manager["target"]));
+					promote({"user_id": room_vote_manager["target"]});
 					var input_message = "Vote passed for " + get_user_name(room_vote_manager["target"], true) + "! ";
 					var queue_length = my_queue.length;
 					input_message += queue_length + " in line: ";
@@ -646,7 +670,7 @@ function temp_user_hash_leave_timer(){
 		if (leave_time != 0){
 			if (current_time - leave_time > 900000){
 				// remove this user from queue and temp hash
-				remove_from_queue(user_id, "deregister");
+				remove_from_queue({"user_id": user_id, "type": "deregister"});
 				delete temp_user_hash[user_id];
 				stop_countdown();
 				alert_next_dj();
@@ -656,6 +680,7 @@ function temp_user_hash_leave_timer(){
 }
 
 function show_existing_vote(attempted_vote_type){
+	alert('hi');
 	if (room_vote_manager["type"] == "promote"){
 		var input_message = "There's already " + (attempted_vote_type == "promote" ? "another" : "a") + " promotion in process for "+ get_user_name(room_vote_manager["target"], true) + ".";
 	}
@@ -690,21 +715,22 @@ function show_plays(options){
 	deliver_chat(input_message);
 }
 
-
 var available_commands = {
-  'w?': [show_queue, "w? : Shows waitlist"],
-  'w+': [add_to_queue, "w+ : Adds yourself to waitlist"],
-  'w-': [remove_from_queue, "w- : Removes yourself from waitlist"],
-  '-mods': [show_mods, "-mods : Lists available mods"],
-  '-promote': [vote_promote, "-promote : Promotes yourself to front of waitlist (requires votes)"],
-  '-plays': [show_plays, "-plays : Shows DJ play count on deck"],
-  '-votekick': [vote_kick, "-votekick [username]: Kicks user [username] (requires votes)"],
-  '-remove': [vote_remove, "-remove [#]: Removes DJ in spot [#] (requives votes)"],
-  '-help': [queue_instructions, ''],
-  '-help ':[get_help, ''],
-  '-stopvote': [vote_stop, ''],
-  '-yes': [process_vote, '']  
+	'w?': [show_queue, "w? : Shows waitlist"],
+	'w+': [add_to_queue, "w+ : Adds yourself to waitlist"],
+	'w-': [remove_from_queue, "w- : Removes yourself from waitlist"],
+	'w++': [shift_in_queue, "w++ : Moves yourself down one spot in waitlist"],
+	'-mods': [show_mods, "-mods : Lists available mods"],
+	'-promote': [vote_promote, "-promote : Promotes yourself to front of waitlist (requires votes)"],
+	'-plays': [show_plays, "-plays : Shows DJ play count on deck"],
+	'-votekick ': [vote_kick, "-votekick [username]: Kicks user [username] (requires votes)"],
+	'-remove ': [vote_remove, "-remove [#]: Removes DJ in spot [#] (requives votes)"],
+	'-help': [queue_instructions, ''],
+	'-help ':[get_help, ''],
+	'-stopvote': [vote_stop, ''],
+	'-yes': [process_vote, '']  
 };
+
 
 turntable.addEventListener("trackstart", function(c){
 	// set up sound manager
