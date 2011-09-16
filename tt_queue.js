@@ -835,14 +835,20 @@ function rickroll(options){
 	deliver_chat(input_message);
 }
 
-function refresh_queue(){
-	var temp_queue = [];
-	for (user_id in my_queue){
-		if (user_hash[user_id] != undefined){
-			temp_queue.push(user_id);
+function refresh_queue(old_queue){
+	if (old_queue === undefined){
+		console.log('there is no queue');
+		var temp_queue = [];
+		for (user_id in my_queue){
+			if (user_hash[user_id] != undefined){
+				temp_queue.push(user_id);
+			}
 		}
+		my_queue = temp_queue;
 	}
-	my_queue = temp_queue;
+	else{
+		console.log('there is a queue');
+	}
 }
 
 var handleMessage = function(m) { console.log(m); }
