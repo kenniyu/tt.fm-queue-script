@@ -217,6 +217,7 @@ function boot(user_id){
 	my_room_manager.callback('boot_user', user_id);
 	$('.bootReasonField.text').val("booted? possible reasons might include spamming, jumping the line too many times, etc... just join again :]");
 	$('.ok-button.centered-button').trigger('click');
+	$('.modal > .close-x').trigger('click');
 }
 
 function check_ban(user_id){
