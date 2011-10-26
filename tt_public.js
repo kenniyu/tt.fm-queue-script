@@ -83,7 +83,7 @@ function update_temp_user_hash(user_id, type){
 				return;
 			}
 		}
-		temp_user_hash[user_id] = {"name": user_hash[user_id]["name"], "leave_time": 0, "last_active": new Date()-180000};
+		temp_user_hash[user_id] = {"name": user_hash[user_id]["name"], "leave_time": 0, "last_active": new Date()};
 	}
 	else{
 		// remove from temp_user_hash
@@ -217,7 +217,6 @@ function boot(user_id){
 	my_room_manager.callback('boot_user', user_id);
 	$('.bootReasonField.text').val("booted? possible reasons might include spamming, jumping the line too many times, etc... just join again :]");
 	$('.ok-button.centered-button').trigger('click');
-	$('.modal > .close-x').trigger('click');
 }
 
 function check_ban(user_id){
@@ -834,6 +833,14 @@ function rickroll(options){
 	rickroll_index++;
 	deliver_chat(input_message);
 }
+
+// function refresh_queue(){
+// 	for (user_id in my_queue){
+// 		if (!(user_id in my_queue)){
+// 			
+// 		}
+// 	}
+// }
 
 var handleMessage = function(m) { console.log(m); }
 turntable.addEventListener("message", handleMessage);
