@@ -837,7 +837,6 @@ function rickroll(options){
 
 function refresh_queue(old_queue){
 	if (old_queue === undefined){
-		console.log('there is no queue');
 		var temp_queue = [];
 		for (user_id in my_queue){
 			if (user_hash[user_id] != undefined){
@@ -847,7 +846,6 @@ function refresh_queue(old_queue){
 		my_queue = temp_queue;
 	}
 	else{
-		console.log('there is a queue');
 	}
 }
 
