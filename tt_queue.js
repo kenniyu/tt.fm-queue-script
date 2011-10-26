@@ -83,7 +83,7 @@ function update_temp_user_hash(user_id, type){
 				return;
 			}
 		}
-		temp_user_hash[user_id] = {"name": user_hash[user_id]["name"], "leave_time": 0, "last_active": new Date()};
+		temp_user_hash[user_id] = {"name": user_hash[user_id]["name"], "leave_time": 0, "last_active": new Date()-180000};
 	}
 	else{
 		// remove from temp_user_hash
@@ -744,6 +744,7 @@ turntable.addEventListener("message", function(m){
 			var funct = available_commands[text.split(" ")[0]+" "][0];
 			funct(options);
 		}
+		set_active_users(user_id);
 	}
 	else if (command == "add_dj"){
 		var user_id = m["user"][0]["userid"];
@@ -772,13 +773,12 @@ turntable.addEventListener("message", function(m){
 	}
 	else if (command == "newsong"){
 		dj_play_hash[my_sound_manager["current_dj"]]["marked"] = false;
+		console.log('new song');
 	}
-	set_active_users(m);
 });
 
-function set_active_users(m){
+function set_active_users(user_id){
 	// m is message event listener
-	var user_id = m["userid"] || m["user"][0]["userid"];
 	if (user_id in temp_user_hash){
 		temp_user_hash[user_id]["last_active"] = new Date();
 	}
@@ -835,16 +835,23 @@ function rickroll(options){
 	deliver_chat(input_message);
 }
 
-// function refresh_queue(){
-// 	for (user_id in my_queue){
-// 		if (!(user_id in my_queue)){
-// 			
-// 		}
-// 	}
-// }
+function refresh_queue(old_queue){
+	if (old_queue === undefined){
+		var temp_queue = [];
+		for (user_id in my_queue){
+			if (user_hash[user_id] != undefined){
+				temp_queue.push(user_id);
+			}
+		}
+		my_queue = temp_queue;
+	}
+	else{
+	}
+}
 
 var handleMessage = function(m) { console.log(m); }
 turntable.addEventListener("message", handleMessage);
 
 var soundstartMessage = function(m) { console.log(m); }
 turntable.addEventListener("trackstart", soundstartMessage);
+
