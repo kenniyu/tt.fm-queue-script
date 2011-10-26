@@ -161,7 +161,7 @@ function is_mod(user_id){
 }
 
 function queue_instructions(){
-	var input_message = "÷÷÷÷÷÷÷÷÷÷÷Commands÷÷÷÷÷÷÷÷÷÷÷ [] w? [] w+ [] w- [] w++ [] -mods [] -plays [] -promote [] -remove [#] [][][][][][][][][][][][] [] -votekick [username] [][][][][][][][][][][][][][] Type -help [command] for more info on a command (ie. -help w?)";
+	var input_message = "÷÷÷÷÷÷÷÷÷÷÷Commands÷÷÷÷÷÷÷÷÷÷÷ [] w? [] w+ [] w- [] w++ [] -mods [] -plays [] -promote [] -pull [#] [] -remove [#] [][][][] [] -votekick [username] [][][][][][][][][][][][][][] Type -help [command] for more info on a command (ie. -help w?)";
 	deliver_chat(input_message);
 }
 function deliver_chat(input_message){
@@ -332,6 +332,20 @@ function add_to_queue(options){
 	deliver_chat(input_message);
 }
 
+function mod_remove_from_queue(options){
+	var user_id = options['user_id'];
+	// can only remove someone who is a dj
+	var text = options['text'];
+	var index = text.substring(8, text.length-1);
+	var input_message = "";
+	if (!isNan(index) && index < my_queue.length && index >= 0){
+		console.log(get_user_name(user_id, true) + ' can remove user at index '+index);
+		var removed_user_id = my_queue.splice(index, 1);
+		input_message += get_user_name(user_id, true) + " removed " + get_user_name(removed_user_id, false) + " from the queue!";
+		deliver_chat(input_message);
+	}
+}
+
 function remove_from_queue(options){
 	var user_id = options["user_id"];
 	var type = options["type"];
@@ -414,6 +428,9 @@ function alert_next_dj(){
 		// only alert people if someone hasn't been alerted
 		if (my_queue.length > 0){
 			// there are people in the queue to alert
+			while(!(my_queue[0] in user_hash)){
+				my_queue.shift();
+			}
 			var username = get_user_name(my_queue[0], false);
 			var input_message = username + ", we have a spot reserved for you, please step up!  You have 90 seconds left.";
 			stop_countdown();
@@ -519,13 +536,12 @@ function vote_promote(options){
 	}
 }
 
-
 function vote_remove(options){
 	if (room_vote_manager["type"] == undefined){
 		var user_id = options['user_id'];
 		// can only remove someone who is a dj
 		var text = options['text'];
-		var target_dj_spot = parseInt(text.substring(8, text.length)) || 0;
+		var target_dj_spot = parseInt(text.substring(6, text.length)) || 0;
 		if (target_dj_spot > 0 && target_dj_spot <= 5){
 			var target_user_id = dj_hash[target_dj_spot-1];
 			var target_user_name = get_user_name(target_user_id, true);
@@ -716,7 +732,8 @@ var available_commands = {
 	'-promote': [vote_promote, "-promote : Promotes yourself to front of waitlist (requires votes)"],
 	'-plays': [show_plays, "-plays : Shows DJ play count on deck"],
 	'-votekick ': [vote_kick, "-votekick [username]: Kicks user [username] (requires votes)"],
-	'-remove ': [vote_remove, "-remove [#]: Removes DJ in spot [#] (requives votes)"],
+	'-pull ': [vote_remove, "-pull [#]: Pulls DJ in spot [#] off the deck (requives votes)"],
+	'-remove ': [mod_remove_from_queue, "-remove [#]: Removes user in queue spot [#] (must be mod)"],
 	'-help': [queue_instructions, ''],
 	'-help ':[get_help, ''],
 	'-rickroll ': [rickroll, ''],
@@ -805,10 +822,6 @@ function get_kick_threshold(){
 	}
 }
 
-setInterval("temp_user_hash_leave_timer()", 10000);
-setInterval("update_dj_play_count()", 10000);
-setInterval("prevent_idle()", 60000);	// check self idle every minute
-
 function prevent_idle(){
 	// currently 8 messages
 	var current_time = new Date();
@@ -849,9 +862,14 @@ function refresh_queue(old_queue){
 	}
 }
 
+// log messages
 var handleMessage = function(m) { console.log(m); }
 turntable.addEventListener("message", handleMessage);
 
 var soundstartMessage = function(m) { console.log(m); }
 turntable.addEventListener("trackstart", soundstartMessage);
 
+// intervals
+setInterval("temp_user_hash_leave_timer()", 10000);
+setInterval("update_dj_play_count()", 10000);
+setInterval("prevent_idle()", 60000);	// check self idle every minute
