@@ -166,14 +166,13 @@ function queue_instructions(){
 }
 function deliver_chat(input_message){
 	// bot text can interrupt your current message. save chat before sending bot message
-	// my_chat = $('.input-box > input').val();
-	// 	// deliver bot chat
-	// 	$('.input-box > input').val(input_message);
-	// 	$('.input-box').trigger('submit');
-	// 	// continue chatting
-	// 	$('.input-box > input').val(my_chat);
-	// 	last_message_time = new Date();
-	console.log(input_message);
+	my_chat = $('.input-box > input').val();
+	// deliver bot chat
+	$('.input-box > input').val(input_message);
+	$('.input-box').trigger('submit');
+	// continue chatting
+	$('.input-box > input').val(my_chat);
+	last_message_time = new Date();
 }
 
 function get_help(options){
