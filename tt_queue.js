@@ -166,13 +166,14 @@ function queue_instructions(){
 }
 function deliver_chat(input_message){
 	// bot text can interrupt your current message. save chat before sending bot message
-	my_chat = $('.input-box > input').val();
-	// deliver bot chat
-	$('.input-box > input').val(input_message);
-	$('.input-box').trigger('submit');
-	// continue chatting
-	$('.input-box > input').val(my_chat);
-	last_message_time = new Date();
+	// my_chat = $('.input-box > input').val();
+	// 	// deliver bot chat
+	// 	$('.input-box > input').val(input_message);
+	// 	$('.input-box').trigger('submit');
+	// 	// continue chatting
+	// 	$('.input-box > input').val(my_chat);
+	// 	last_message_time = new Date();
+	console.log(input_message);
 }
 
 function get_help(options){
@@ -336,12 +337,13 @@ function mod_remove_from_queue(options){
 	var user_id = options['user_id'];
 	// can only remove someone who is a dj
 	var text = options['text'];
-	var index = text.substring(8, text.length-1);
+	var index = text.substring(8, text.length);
 	var input_message = "";
-	if (!isNan(index) && index < my_queue.length && index >= 0){
+	if (!isNaN(index) && index <= my_queue.length && index > 0){
 		console.log(get_user_name(user_id, true) + ' can remove user at index '+index);
-		var removed_user_id = my_queue.splice(index, 1);
-		input_message += get_user_name(user_id, true) + " removed " + get_user_name(removed_user_id, false) + " from the queue!";
+		var removed_user_id = my_queue[index-1];
+		my_queue.splice(index-1, 1);
+		input_message += "Removed " + get_user_name(removed_user_id, false) + " from the queue :[";
 		deliver_chat(input_message);
 	}
 }
