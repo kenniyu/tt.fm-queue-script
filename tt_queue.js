@@ -17,6 +17,8 @@ var my_room_manager = get_room_manager();
 var my_sound_manager = {};
 var my_chat = "";
 var rickroll_index = 0;
+var idle_message_index = 0;
+var last_message_time = new Date();
 
 var visited_users = [];
 
@@ -426,7 +428,7 @@ function alert_next_dj(){
 		if (my_queue.length > 0){
 			// there are people in the queue to alert
 			while(!(my_queue[0] in user_hash)){
-				my_queue.shift();
+				my_queue.splice(0,1);
 			}
 			var username = get_user_name(my_queue[0], false);
 			var input_message = username + ", we have a spot reserved for you, please step up!  You have 90 seconds left.";
@@ -834,17 +836,14 @@ function rickroll(options){
 	deliver_chat(input_message);
 }
 
-function refresh_queue(old_queue){
-	if (old_queue === undefined){
-		var temp_queue = [];
-		for (user_id in my_queue){
-			if (user_hash[user_id] != undefined){
-				temp_queue.push(user_id);
-			}
-		}
-		my_queue = temp_queue;
-	}
-	else{
+function prevent_idle(){
+	// currently 8 messages
+	var current_time = new Date();
+	if (current_time - last_message_time >= 600000){
+		// speaks every 600000 ms, or 600 seconds, or 10 minutes
+		var messages = ["w?", "-plays", "-help", " "];
+		deliver_chat(messages[idle_message_index%(messages.length)]);
+		idle_message_index++;
 	}
 }
 
@@ -858,3 +857,4 @@ turntable.addEventListener("trackstart", soundstartMessage);
 // intervals
 setInterval("temp_user_hash_leave_timer()", 10000);
 setInterval("update_dj_play_count()", 10000);
+setInterval("prevent_idle()", 60000);
