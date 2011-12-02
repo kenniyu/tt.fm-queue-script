@@ -844,6 +844,7 @@ function prevent_idle(){
 		var messages = ["w?", "-plays", "-help", " "];
 		deliver_chat(messages[idle_message_index%(messages.length)]);
 		idle_message_index++;
+		last_message_time = current_time;
 	}
 }
 
