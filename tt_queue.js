@@ -841,7 +841,7 @@ function prevent_idle(){
 	var current_time = new Date();
 	if (current_time - last_message_time >= 600000){
 		// speaks every 600000 ms, or 600 seconds, or 10 minutes
-		var messages = ["w?", "-plays", "-help", " "];
+		var messages = ["w?", "-plays"];
 		deliver_chat(messages[idle_message_index%(messages.length)]);
 		idle_message_index++;
 		last_message_time = current_time;
