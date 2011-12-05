@@ -17,8 +17,6 @@ var my_room_manager = get_room_manager();
 var my_sound_manager = {};
 var my_chat = "";
 var rickroll_index = 0;
-var idle_message_index = 0;
-var last_message_time = new Date();
 
 var visited_users = [];
 
@@ -836,18 +834,6 @@ function rickroll(options){
 	deliver_chat(input_message);
 }
 
-function prevent_idle(){
-	// currently 8 messages
-	var current_time = new Date();
-	if (current_time - last_message_time >= 600000){
-		// speaks every 600000 ms, or 600 seconds, or 10 minutes
-		var messages = ["hi", "-plays"];
-		deliver_chat(messages[idle_message_index%(messages.length)]);
-		idle_message_index++;
-		last_message_time = current_time;
-	}
-}
-
 // log messages
 var handleMessage = function(m) { console.log(m); }
 turntable.addEventListener("message", handleMessage);
@@ -858,4 +844,3 @@ turntable.addEventListener("trackstart", soundstartMessage);
 // intervals
 setInterval("temp_user_hash_leave_timer()", 10000);
 setInterval("update_dj_play_count()", 10000);
-setInterval("prevent_idle()", 60000);
