@@ -331,15 +331,17 @@ function add_to_queue(options){
 function mod_remove_from_queue(options){
 	var user_id = options['user_id'];
 	// can only remove someone who is a dj
-	var text = options['text'];
-	var index = text.substring(8, text.length);
-	var input_message = "";
-	if (!isNaN(index) && index <= my_queue.length && index > 0){
-		console.log(get_user_name(user_id, true) + ' can remove user at index '+index);
-		var removed_user_id = my_queue[index-1];
-		my_queue.splice(index-1, 1);
-		input_message += "Removed " + get_user_name(removed_user_id, false) + " from the queue :[";
-		deliver_chat(input_message);
+	if (is_mod(user_id)){
+		var text = options['text'];
+		var index = text.substring(8, text.length);
+		var input_message = "";
+		if (!isNaN(index) && index <= my_queue.length && index > 0){
+			console.log(get_user_name(user_id, true) + ' can remove user at index '+index);
+			var removed_user_id = my_queue[index-1];
+			my_queue.splice(index-1, 1);
+			input_message += "Removed " + get_user_name(removed_user_id, false) + " from the queue :[";
+			deliver_chat(input_message);
+		}
 	}
 }
 
@@ -426,7 +428,7 @@ function alert_next_dj(){
 		if (my_queue.length > 0){
 			// there are people in the queue to alert
 			while(!(my_queue[0] in user_hash)){
-				my_queue.shift();
+				my_queue.splice(0,1);
 			}
 			var username = get_user_name(my_queue[0], false);
 			var input_message = username + ", we have a spot reserved for you, please step up!  You have 90 seconds left.";
@@ -832,20 +834,6 @@ function rickroll(options){
 	var input_message = get_user_name(user_id, true) + "'s " + messages[rickroll_index%6];
 	rickroll_index++;
 	deliver_chat(input_message);
-}
-
-function refresh_queue(old_queue){
-	if (old_queue === undefined){
-		var temp_queue = [];
-		for (user_id in my_queue){
-			if (user_hash[user_id] != undefined){
-				temp_queue.push(user_id);
-			}
-		}
-		my_queue = temp_queue;
-	}
-	else{
-	}
 }
 
 // log messages
