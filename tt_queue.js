@@ -15,6 +15,7 @@ function get_room_manager(){
 var first_tt_obj = get_first_tt_obj();
 var my_room_manager = get_room_manager();
 var my_sound_manager = {};
+var prev_dj;
 var my_chat = "";
 var rickroll_index = 0;
 
@@ -55,19 +56,10 @@ function init_dj_play_hash(){
 }
 
 function set_dj_play_count(user_id, play_count, marked){
+	console.log("setting dj play count to " + play_count);
 	dj_play_hash[user_id] = {"user_name": user_hash[user_id]["name"], "count": play_count, "play_duration": 0, "marked": marked};	
 }
 
-function update_dj_play_count(){
-	var user_id = my_room_manager["current_dj"][0];
-	var play_duration = my_sound_manager["position"];
-	dj_play_hash[user_id]["play_duration"] = play_duration;
-	if (play_duration > 60000 && dj_play_hash[user_id]["marked"] == false){
-		dj_play_hash[user_id]["marked"] = true;
-		dj_play_hash[user_id]["count"] += 1;
-		// took out sanity check
-	}
-}
 init_dj_play_hash();
 
 
@@ -740,11 +732,11 @@ var available_commands = {
 	'-yes': [process_vote, '']  
 };
 
-turntable.addEventListener("trackstart", function(c){
-	// set up sound manager
-	my_sound_manager = c["sound"];
-	my_sound_manager["current_dj"] = my_room_manager["current_dj"][0];
-});
+/*
+// console.log(c);
+// my_sound_manager = c["sound"];
+// my_sound_manager["current_dj"] = my_room_manager["current_dj"][0];
+*/
 
 turntable.addEventListener("message", function(m){ 
 	var command = m["command"];
@@ -788,8 +780,10 @@ turntable.addEventListener("message", function(m){
 		show_mods();
 	}
 	else if (command == "newsong"){
-		dj_play_hash[my_sound_manager["current_dj"]]["marked"] = false;
-		console.log('new song');
+		if (prev_dj != undefined){
+			dj_play_hash[prev_dj]["count"] += 1;
+		}
+		prev_dj = m.room.metadata.current_dj;
 	}
 });
 
@@ -845,4 +839,3 @@ turntable.addEventListener("trackstart", soundstartMessage);
 
 // intervals
 setInterval("temp_user_hash_leave_timer()", 10000);
-setInterval("update_dj_play_count()", 10000);
